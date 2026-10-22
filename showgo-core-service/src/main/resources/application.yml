@@ -124,6 +124,13 @@ ticket:
       initial-backoff-millis: 200
       max-backoff-millis: 1000
 
+# 管理端（演示默认账号，生产请通过环境变量覆盖）
+admin:
+  username: ${ADMIN_USERNAME:admin}
+  password: ${ADMIN_PASSWORD:admin123}
+  token:
+    ttl-seconds: ${ADMIN_TOKEN_TTL_SECONDS:7200}
+
 management:
   endpoints:
     web:

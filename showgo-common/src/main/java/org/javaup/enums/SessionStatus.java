@@ -16,6 +16,8 @@ public enum SessionStatus {
     FINISHED(4, "已结束"),
 
     CANCELED(5, "已取消"),
+
+    PAUSED(6, "已停售"),
     ;
 
     @Getter

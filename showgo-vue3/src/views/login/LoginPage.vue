@@ -81,6 +81,7 @@ const rules = {
       </el-form-item>
       <el-button class="submit" type="primary" @click="login">登录 / 注册</el-button>
       <div class="tip" @click="router.push('/index')">先随便逛逛 →</div>
+      <div class="admin-link" @click="router.push('/admin/login')">演出管理入口</div>
     </el-form>
   </div>
 </template>
@@ -134,6 +135,13 @@ const rules = {
   text-align: center;
   font-size: 13px;
   color: #999;
+  cursor: pointer;
+}
+.admin-link {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 12px;
+  color: #bbb;
   cursor: pointer;
 }
 </style>

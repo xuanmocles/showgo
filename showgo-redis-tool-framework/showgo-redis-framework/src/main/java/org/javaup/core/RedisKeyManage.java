@@ -88,6 +88,9 @@ public enum RedisKeyManage {
     USER_LEVEL_MEMBERS_TAG_KEY("ticket:user:level:{%s}:members", "用户等级（同槽位HashTag）", "Set，member 为用户id"),
 
     USER_LEVEL_MEMBERS_UNION_TAG_KEY("ticket:user:level:union:{%s}", "用户等级范围标签", "临时 Set"),
+
+    /* ---------------- 管理端 ---------------- */
+    ADMIN_TOKEN_KEY("admin:token:%s", "管理端登录令牌", "管理员用户名"),
     ;
 
     private final String key;

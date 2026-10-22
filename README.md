@@ -329,6 +329,30 @@ Lua 才能在一次调用内原子操作多个 key。
 
 > 统一返回结构：`{ success, errorMsg, data, total }`。
 
+### 管理端（B 端）
+
+入口：**http://localhost:8080/admin/login**
+
+默认账号 `admin` / `admin123`，可通过环境变量 `ADMIN_USERNAME` / `ADMIN_PASSWORD` 覆盖。
+登录成功后签发 Redis token（默认 2 小时），管理端接口统一走 `/admin/**` 鉴权，与 C 端用户登录态隔离。
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| POST | `/admin/login` | 管理端登录 |
+| POST | `/admin/logout` | 退出 |
+| GET | `/admin/venues` | 场馆下拉 |
+| GET | `/admin/shows` | 演出分页查询（关键词 / 状态） |
+| POST | `/admin/shows` | 新增或编辑演出（有 id 即编辑） |
+| PUT | `/admin/shows/{id}/status` | 上架 / 下架 / 已结束 |
+| DELETE | `/admin/shows/{id}` | 删除演出（已有场次时拒绝，只能下架） |
+| GET | `/admin/shows/{showId}/sessions` | 演出的场次列表 |
+| POST | `/admin/sessions` | 创建场次：同一事务写场次 + 分区票档 + 批量座位 |
+| PUT | `/admin/sessions/{id}/status` | 开售 / 停售(6) / 售罄 / 结束 / 取消 |
+| POST | `/admin/sessions/{id}/stock/recompute` | 以座位明细为准重算余票并同步 Redis |
+
+**创建场次后会自动完成三件事**：写入 Redis BitField 座位图与索引映射、把演出/场次加入布隆过滤器、
+失效 C 端缓存。因此管理端刚发布的演出，用户端刷新即可看到并可立即选座，不需要重启服务。
+
 ---
 
 ## 九、快速开始
@@ -442,6 +466,9 @@ npm run dev
 3. 点击「智能推荐连座」，系统自动挑出连续空位；
 4. 锁定座位 → 提交订单并支付 → 跳转票夹查看座位号；
 5. 在订单页取消或退票，观察座位回流与候补补位。
+
+管理端演示：打开 `/admin/login`（admin / admin123）→ 新建演出 → 进入「场次」→ 新建场次
+（配置 2 个分区，系统自动生成座位并预热座位图）→ 回到用户端刷新，即可看到新演出并选座。
 
 > 演示账号：手机号 `13800000001` ~ `13800000006`，验证码请查看后端日志。
 

@@ -314,6 +314,9 @@ public class SeatServiceImpl implements ISeatService {
         if (Objects.equals(status, SessionStatus.FINISHED.getCode())) {
             throw new ShowGoFrameException(BaseCode.SESSION_ALREADY_BEGUN);
         }
+        if (Objects.equals(status, SessionStatus.PAUSED.getCode())) {
+            throw new ShowGoFrameException(BaseCode.SESSION_PAUSED);
+        }
         if (Objects.nonNull(detail.getSaleBeginTime()) && now.isBefore(detail.getSaleBeginTime())) {
             throw new ShowGoFrameException(BaseCode.SESSION_NOT_ON_SALE);
         }

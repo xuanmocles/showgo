@@ -145,6 +145,8 @@ services:
       # 演示/面试测试用：可在宿主机设置 SEAT_LOCK_SECONDS=30 等临时值验证超时链路
       TICKET_SEAT_LOCK_SECONDS: ${SEAT_LOCK_SECONDS:-900}
       TICKET_ORDER_PAY_TIMEOUT_SECONDS: ${PAY_TIMEOUT_SECONDS:-900}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
       JAVA_OPTS: "-XX:MaxRAMPercentage=75 -XX:+UseG1GC -Duser.timezone=Asia/Shanghai"
     ports:
       - "${BACKEND_PORT:-8085}:8085"

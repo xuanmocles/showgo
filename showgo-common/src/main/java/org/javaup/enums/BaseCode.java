@@ -17,6 +17,7 @@ public enum BaseCode {
     SESSION_SOLD_OUT(10005, "场次已售罄"),
     SESSION_CANCELED(10006, "场次已取消"),
     SESSION_ALREADY_BEGUN(10007, "场次已开演"),
+    SESSION_PAUSED(10008, "场次已停止售票"),
 
     /* ---------------- 座位 10101-10199 ---------------- */
     SEAT_MAP_NOT_READY(10101, "座位图尚未初始化"),
