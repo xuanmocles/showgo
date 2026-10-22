@@ -1,0 +1,221 @@
+# ============================================================
+# 容器环境专用分片配置（构建镜像时覆盖 jar 内的同名文件）
+# 与源码版的区别：
+#   1. 数据源主机使用 compose 服务名 mysql
+#   2. JDBC URL 增加 useSSL=false&allowPublicKeyRetrieval=true，
+#      适配 MySQL 8 默认的 caching_sha2_password 认证插件
+# ============================================================
+
+# ============================================================
+# 星幕票务 ShowGo 分库分表配置
+# 2 库 x 2 表，共 4 个物理分片
+# ============================================================
+dataSources:
+  ds_0:
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbcUrl: jdbc:mysql://mysql:3306/showgo_0?useUnicode=true&useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&rewriteBatchedStatements=true&allowMultiQueries=true&serverTimezone=Asia/Shanghai&autoReconnect=true
+    username: root
+    password: root
+    hikari:
+      minimum-idle: 20
+      maximum-pool-size: 100
+      connection-timeout: 20000
+      idle-timeout: 300000
+      max-lifetime: 1800000
+      leak-detection-threshold: 30000
+      validation-timeout: 5000
+  ds_1:
+    dataSourceClassName: com.zaxxer.hikari.HikariDataSource
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbcUrl: jdbc:mysql://mysql:3306/showgo_1?useUnicode=true&useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&rewriteBatchedStatements=true&allowMultiQueries=true&serverTimezone=Asia/Shanghai&autoReconnect=true
+    username: root
+    password: root
+    hikari:
+      minimum-idle: 20
+      maximum-pool-size: 100
+      connection-timeout: 20000
+      idle-timeout: 300000
+      max-lifetime: 1800000
+      leak-detection-threshold: 30000
+      validation-timeout: 5000
+
+rules:
+  - !SHARDING
+    tables:
+      # 场次：按场次 id 分片，同场次的档期数据内聚在同一分片
+      tb_show_session:
+        actualDataNodes: ds_${0..1}.tb_show_session_${0..1}
+        databaseStrategy:
+          standard:
+            shardingColumn: id
+            shardingAlgorithmName: databaseSessionModModel
+        tableStrategy:
+          standard:
+            shardingColumn: id
+            shardingAlgorithmName: tableSessionModModel
+      # 座位：按场次分片，单场次座位图不会跨库
+      tb_show_seat:
+        actualDataNodes: ds_${0..1}.tb_show_seat_${0..1}
+        databaseStrategy:
+          standard:
+            shardingColumn: session_id
+            shardingAlgorithmName: databaseSessionModModel
+        tableStrategy:
+          standard:
+            shardingColumn: session_id
+            shardingAlgorithmName: tableSeatModModel
+      # 订单：分库与分表统一使用 user_id，避免主键路由不一致导致的全路由
+      tb_ticket_order:
+        actualDataNodes: ds_${0..1}.tb_ticket_order_${0..1}
+        databaseStrategy:
+          standard:
+            shardingColumn: user_id
+            shardingAlgorithmName: databaseUserModModel
+        tableStrategy:
+          standard:
+            shardingColumn: user_id
+            shardingAlgorithmName: tableTicketOrderModModel
+      # 订单路由：按 order_id 精确路由，解决「按订单号查订单」的跨分片问题
+      tb_ticket_order_router:
+        actualDataNodes: ds_${0..1}.tb_ticket_order_router_${0..1}
+        databaseStrategy:
+          standard:
+            shardingColumn: order_id
+            shardingAlgorithmName: databaseOrderHashModModel
+        tableStrategy:
+          standard:
+            shardingColumn: order_id
+            shardingAlgorithmName: tableTicketOrderRouterModModel
+      # 票：与订单同分片
+      tb_ticket:
+        actualDataNodes: ds_${0..1}.tb_ticket_${0..1}
+        databaseStrategy:
+          standard:
+            shardingColumn: order_id
+            shardingAlgorithmName: databaseOrderHashModModel
+        tableStrategy:
+          standard:
+            shardingColumn: order_id
+            shardingAlgorithmName: tableTicketModModel
+      # 对账流水：与订单同分片，实现分片内对账
+      tb_seat_reconcile_log:
+        actualDataNodes: ds_${0..1}.tb_seat_reconcile_log_${0..1}
+        databaseStrategy:
+          standard:
+            shardingColumn: order_id
+            shardingAlgorithmName: databaseOrderHashModModel
+        tableStrategy:
+          standard:
+            shardingColumn: order_id
+            shardingAlgorithmName: tableSeatReconcileLogModModel
+      # 本地消息表：按业务 id（订单 id）分片，可与订单在同一事务内写入
+      tb_local_message:
+        actualDataNodes: ds_${0..1}.tb_local_message_${0..1}
+        databaseStrategy:
+          standard:
+            shardingColumn: biz_id
+            shardingAlgorithmName: databaseOrderHashModModel
+        tableStrategy:
+          standard:
+            shardingColumn: biz_id
+            shardingAlgorithmName: tableLocalMessageModModel
+      tb_user:
+        actualDataNodes: ds_${0..1}.tb_user_${0..1}
+        databaseStrategy:
+          standard:
+            shardingColumn: id
+            shardingAlgorithmName: databaseUserModModel
+        tableStrategy:
+          standard:
+            shardingColumn: id
+            shardingAlgorithmName: tableUserModModel
+      tb_user_info:
+        actualDataNodes: ds_${0..1}.tb_user_info_${0..1}
+        databaseStrategy:
+          standard:
+            shardingColumn: user_id
+            shardingAlgorithmName: databaseUserModModel
+        tableStrategy:
+          standard:
+            shardingColumn: user_id
+            shardingAlgorithmName: tableUserInfoModModel
+      # 手机号 -> 用户 映射，按手机号哈希分片
+      tb_user_phone:
+        actualDataNodes: ds_${0..1}.tb_user_phone_${0..1}
+        databaseStrategy:
+          standard:
+            shardingColumn: phone
+            shardingAlgorithmName: databaseUserPhoneHashModModel
+        tableStrategy:
+          standard:
+            shardingColumn: phone
+            shardingAlgorithmName: tableUserPhoneHashModModel
+
+    # 字典类表：数据量小、需全量可见，使用广播表
+    broadcastTables:
+      - tb_venue
+      - tb_show
+      - tb_seat_area
+      - tb_seat_lock_log
+      - tb_rollback_failure_log
+
+    shardingAlgorithms:
+      databaseSessionModModel:
+        type: MOD
+        props:
+          sharding-count: 2
+      tableSessionModModel:
+        type: INLINE
+        props:
+          algorithm-expression: tb_show_session_${id.intdiv(2) % 2}
+      tableSeatModModel:
+        type: INLINE
+        props:
+          algorithm-expression: tb_show_seat_${session_id.intdiv(2) % 2}
+      databaseUserModModel:
+        type: MOD
+        props:
+          sharding-count: 2
+      databaseOrderHashModModel:
+        type: HASH_MOD
+        props:
+          sharding-count: 2
+      databaseUserPhoneHashModModel:
+        type: HASH_MOD
+        props:
+          sharding-count: 2
+      tableUserModModel:
+        type: INLINE
+        props:
+          algorithm-expression: tb_user_${id.intdiv(2) % 2}
+      tableUserInfoModModel:
+        type: INLINE
+        props:
+          algorithm-expression: tb_user_info_${user_id.intdiv(2) % 2}
+      tableUserPhoneHashModModel:
+        type: INLINE
+        props:
+          algorithm-expression: tb_user_phone_${Math.abs(phone.hashCode()).intdiv(2) % 2}
+      tableTicketOrderModModel:
+        type: INLINE
+        props:
+          algorithm-expression: tb_ticket_order_${user_id.intdiv(2) % 2}
+      tableTicketOrderRouterModModel:
+        type: INLINE
+        props:
+          algorithm-expression: tb_ticket_order_router_${order_id.intdiv(2) % 2}
+      tableTicketModModel:
+        type: INLINE
+        props:
+          algorithm-expression: tb_ticket_${order_id.intdiv(2) % 2}
+      tableSeatReconcileLogModModel:
+        type: INLINE
+        props:
+          algorithm-expression: tb_seat_reconcile_log_${order_id.intdiv(2) % 2}
+      tableLocalMessageModModel:
+        type: INLINE
+        props:
+          algorithm-expression: tb_local_message_${biz_id.intdiv(2) % 2}
+props:
+  sql-show: false

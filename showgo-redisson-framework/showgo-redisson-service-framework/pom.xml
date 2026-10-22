@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.javaup</groupId>
+        <artifactId>showgo-redisson-framework</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>showgo-redisson-service-framework</artifactId>
+    <name>showgo-redisson-service-framework</name>
+    <description>分布式服务工具</description>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>showgo-bloom-filter-framework</module>
+        <module>showgo-redisson-common-framework</module>
+		<module>showgo-service-lock-framework</module>
+        <module>showgo-repeat-execute-limit-framework</module>
+    </modules>
+
+</project>

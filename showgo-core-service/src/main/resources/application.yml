@@ -1,0 +1,135 @@
+server:
+  # 容器内可通过 SERVER_PORT 覆盖
+  port: ${SERVER_PORT:8085}
+
+# 多环境共用中间件时的业务前缀，会拼接在 Redis key / Kafka topic 之前
+prefix:
+  distinction:
+    # 多套环境共用中间件时的业务前缀，会拼在 Redis key / Kafka topic 前面
+    name: ${BUSINESS_PREFIX:showgo}
+
+spring:
+  application:
+    name: showgo-ticket
+  main:
+    allow-bean-definition-overriding: true
+    allow-circular-references: true
+  datasource:
+    driver-class-name: org.apache.shardingsphere.driver.ShardingSphereDriver
+    url: jdbc:shardingsphere:classpath:shardingsphere.yaml
+  data:
+    redis:
+      database: 0
+      # 容器内由 compose 注入 REDIS_HOST=redis
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+    servlet:
+      load-on-startup: 1
+  jackson:
+    default-property-inclusion: non_null
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+    generator:
+      WRITE_NUMBERS_AS_STRINGS: true
+  kafka:
+    # 容器内由 compose 注入 KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      acks: all
+      retries: 5
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+    consumer:
+      group-id: create_ticket_order
+      enable-auto-commit: false
+      auto-offset-reset: latest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    listener:
+      ack-mode: manual_immediate
+
+mybatis-plus:
+  type-aliases-package: org.javaup.entity
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    local-cache-scope: statement
+
+logging:
+  level:
+    org.javaup: info
+    AUDIT: INFO
+  pattern:
+    dateformat: mm:ss.SSS
+
+bloom-filter:
+  filters:
+    show:
+      name: show-id-bloom
+      expected-insertions: 50000
+      false-probability: 0.01
+    session:
+      name: session-id-bloom
+      expected-insertions: 200000
+      false-probability: 0.01
+
+# 票务业务参数
+ticket:
+  seat:
+    # 锁座有效期（秒），超时未下单由延迟队列释放
+    lock-seconds: 900
+    # 单笔订单最多购票张数
+    max-seat-per-order: 6
+    # 单个用户在同一场次的最大购票数
+    max-seat-per-user: 6
+  order:
+    # 下单后支付超时时间（秒）
+    pay-timeout-seconds: 900
+  access:
+    token:
+      enabled: true
+      ttl-seconds: 30
+  waitlist:
+    notify-dedup-seconds: 1800
+    notify:
+      sms:
+        enabled: false
+        to: ''
+      app:
+        enabled: false
+  reminder:
+    # 开售前多少分钟推送提醒
+    advance-minutes: 30
+    notify:
+      max-users: 1000
+      default-min-level: 1
+      user-level-max: 10
+      top-buyers:
+        enabled: true
+        days: 30
+        count: 200
+  local-message:
+    # 本地消息表扫描间隔（毫秒）
+    scan-interval-ms: 2000
+    # 单条消息最大投递次数
+    max-retry: 6
+  rollback:
+    retry:
+      max-attempts: 3
+      initial-backoff-millis: 200
+      max-backoff-millis: 1000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "prometheus,health,info"
+  prometheus:
+    metrics:
+      export:
+        enabled: true

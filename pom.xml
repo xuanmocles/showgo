@@ -20,24 +20,27 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.javaup</groupId>
-    <artifactId>hmdp-plus</artifactId>
+    <artifactId>showgo-plus</artifactId>
     <version>${revision}</version>
     <packaging>pom</packaging>
 
     <name>${project.artifactId}</name>
     <description>
-        🔥 🔥 热门推荐 🔥 🔥将黑马点评进行完全地重构升级，围绕优惠券秒杀与热点查询，补齐高并发稳定性、动态令牌、限流、消息可靠性与数据一致性闭环，并添加订阅通知、候补排队等新亮点功能，解决烂大街和亮点不足问题！并打造成真正企业级别实战项目，全面工程化落地。
+        星幕票务 ShowGo —— 演出赛事在线选座购票平台。围绕「开票瞬间的选座争抢」，
+        用 Redis BitField 表达座位图、Lua 保证选座原子性、本地消息表 + Kafka 保证出票可靠、
+        延迟队列负责锁座超时与支付超时、定时对账收敛 Redis 与数据库的差异，
+        并提供智能连座推荐、实时座位图推送、售罄候补、开售提醒等完整购票能力。
     </description>
 
     <modules>
-        <module>hmdp-common</module>
-        <module>hmdp-sharding</module>
-        <module>hmdp-core-service</module>
-        <module>hmdp-redisson-framework</module>
-        <module>hmdp-redis-tool-framework</module>
-        <module>hmdp-id-generator-framework</module>
-        <module>hmdp-mq-framework</module>
-        <module>hmdp-parameter</module>
+        <module>showgo-common</module>
+        <module>showgo-sharding</module>
+        <module>showgo-core-service</module>
+        <module>showgo-redisson-framework</module>
+        <module>showgo-redis-tool-framework</module>
+        <module>showgo-id-generator-framework</module>
+        <module>showgo-mq-framework</module>
+        <module>showgo-parameter</module>
     </modules>
 
     <properties>

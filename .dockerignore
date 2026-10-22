@@ -1,0 +1,20 @@
+# 构建上下文排除项：只把源码送进 Docker，构建速度取决于上下文大小
+.git
+.gitignore
+.idea
+*.iml
+*.log
+
+# 构建产物
+**/target
+**/dist
+.flattened-pom.xml
+
+# 前端依赖
+showgo-vue3/node_modules
+showgo-vue3/.vite
+
+# 临时文件
+raw*.txt
+compile-log.txt
+document

@@ -1,0 +1,38 @@
+# ============================================================
+# 星幕票务 ShowGo —— 后端镜像
+# 构建阶段在容器内完成 Maven 打包，运行阶段只保留 JRE 与可执行 jar
+# ============================================================
+FROM maven:3.9-eclipse-temurin-17 AS build
+
+WORKDIR /build
+
+# 整个工程作为一个构建上下文（多模块 Maven 需要全部模块）
+COPY . .
+
+# 容器里数据库主机名是 compose 服务名 mysql，用容器版配置覆盖默认的本机配置
+COPY docker/shardingsphere.docker.yaml showgo-core-service/src/main/resources/shardingsphere.yaml
+
+# 缓存 Maven 仓库，重复构建不必重新下载依赖
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -B -T 1C clean package -DskipTests \
+ && find showgo-core-service/target -maxdepth 1 -name 'showgo-core-service-*.jar' \
+         ! -name '*-sources.jar' -exec cp {} /build/app.jar \;
+
+# ------------------------------------------------------------
+FROM eclipse-temurin:17-jre-jammy
+
+ENV TZ=Asia/Shanghai \
+    JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+UseG1GC -Duser.timezone=Asia/Shanghai"
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends curl tzdata \
+ && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=build /build/app.jar /app/app.jar
+
+EXPOSE 8085
+
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]
